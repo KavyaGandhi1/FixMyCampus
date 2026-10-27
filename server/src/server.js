@@ -91,7 +91,7 @@ export const startServer = async () => {
   }
 
   return new Promise((resolve) => {
-    server = app.listen(PORT, () => {
+    server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`\n==================================================`);
       console.log(`⚡ FixMyCampus Server running on port ${PORT}`);
       console.log(`   Health:    http://localhost:${PORT}/api/health`);
