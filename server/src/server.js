@@ -84,7 +84,7 @@ export const startServer = async () => {
   });
 };
 
-if (process.argv[1]?.endsWith('server.js')) {
+if (process.argv[1]?.endsWith('server.js') || process.argv[1]?.endsWith('index.js')) {
   startServer().catch((err) => {
     console.error('Failed to start server:', err);
     process.exit(1);
