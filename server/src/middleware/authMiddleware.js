@@ -24,10 +24,19 @@ export const protect = async (req, res, next) => {
         });
       }
 
-      if (!req.user.isActive) {
+      // Immediate session revocation for deactivated accounts
+      if (req.user.accountStatus === 'deactivated' || req.user.isActive === false) {
         return res.status(403).json({
           success: false,
-          message: 'Account has been deactivated. Please contact an administrator.'
+          message: 'Your account has been deactivated. Please contact an administrator.'
+        });
+      }
+
+      // Pending staff members who have not activated their account
+      if (req.user.accountStatus === 'pending') {
+        return res.status(403).json({
+          success: false,
+          message: 'Your account is pending activation. Please set your password using your invitation link.'
         });
       }
 

@@ -1,120 +1,98 @@
 # FixMyCampus
 
-**FixMyCampus** is a full-stack campus incident management and facilities maintenance software platform designed for universities and student hostels. Students report infrastructure faults (Wi-Fi outages, plumbing leaks, electrical hazards, broken projectors), campus maintenance technicians triage and repair them, and administrators oversee operations with real-time analytics.
+**FixMyCampus** is a full-stack campus incident management and facilities maintenance software platform designed for universities and student hostels. Students report infrastructure faults (Wi-Fi outages, plumbing leaks, electrical hazards, broken classroom AV), campus maintenance technicians triage and repair them, and administrators oversee operations with real-time analytics.
 
 ---
 
-## Architecture Overview
+## The Exactly Three Portals
 
-The system is architected as a decoupled client-server web application:
+The application is structured into **exactly three main user portals**:
+
+1. **Student Portal** (`/student`, login at `/student/login`)
+   - Public student registration (`/student/register`).
+   - Report issues with title, description, category, building, room number, priority, and optional photo.
+   - Intelligent duplicate detection alerts before submission.
+   - Track live ticket statuses (`Open`, `In Progress`, `Resolved`, `Closed`).
+   - View technician audit history and participate in issue discussion comments.
+   - Confirm resolution to close tickets.
+
+2. **Staff Portal** (`/staff`, login at `/staff/login`)
+   - Accessible strictly through credentials established via **admin-issued invitations**. Public staff registration is strictly prohibited.
+   - View assigned work orders.
+   - Update issue status through valid state transitions (`Open` → `In Progress` → `Resolved`).
+   - Record diagnosis notes, resolution notes, and post progress comments or internal staff notes.
+   - Immediate session revocation if account is deactivated by an administrator.
+
+3. **Admin Portal** (`/admin`, login at `/admin/login`)
+   - Campus-wide facilities oversight and incident management.
+   - Assign / reassign issues to registered active staff members.
+   - Adjust issue priorities (Low, Medium, High).
+   - Real-time MongoDB aggregated analytics (resolution times, category charts, location hotspots).
+   - **Staff Management** (`/admin/staff`):
+     - Onboard technicians with name, official email, department, and optional employee ID.
+     - Automatically generates secure, single-use, 7-day cryptographically hashed invitation tokens.
+     - View staff directory with assigned issue metrics and account status (`Active`, `Invitation Pending`, `Deactivated`).
+     - Deactivate / reactivate accounts or resend / revoke invitations.
+
+---
+
+## Admin-Controlled Staff Invitation & Activation Workflow
+
+Staff accounts can **never** be created through public registration. The secure onboarding process:
 
 ```
-FixMyCampus/
-├── client/                     # Frontend SPA (React 19 + Vite + Tailwind CSS)
-│   ├── src/
-│   │   ├── api/                # Axios API services (auth, issues, comments, analytics, users)
-│   │   ├── components/         # Reusable UI components
-│   │   │   ├── common/         # Navbar, Sidebar, Badges, Modals, Spinners, Empty states
-│   │   │   ├── dashboard/      # Stat cards & Recharts visualization components
-│   │   │   └── issues/         # Cards, Filter bar, Duplicate modal, Timeline, Comments
-│   │   ├── context/            # React AuthContext (JWT session state & role helpers)
-│   │   ├── layouts/            # MainLayout (with responsive sidebar) & AuthLayout
-│   │   ├── pages/              # Role dashboards, Ticket list, Details, Report issue, 404
-│   │   ├── routes/             # AppRoutes & role-based ProtectedRoute
-│   │   ├── App.jsx             # Root provider shell
-│   │   └── main.jsx            # Entry point
-│   ├── package.json
-│   ├── vite.config.js          # Dev server with /api proxy to backend
-│   └── tailwind.config.js
-├── server/                     # Backend REST API (Node.js + Express + Mongoose)
-│   ├── src/
-│   │   ├── config/             # DB connection (Atlas + embedded in-memory fallback)
-│   │   ├── controllers/        # Auth, Issue, Comment, Analytics, User logic
-│   │   ├── middleware/         # JWT protect, Role authorize, ObjectId validator, Error handler, Multer
-│   │   ├── models/             # Mongoose schemas: User, Issue, Comment
-│   │   ├── routes/             # Express route routers
-│   │   ├── seeds/              # Database seeder with realistic test data & role credentials
-│   │   ├── tests/              # 26 automated integration tests for critical workflows
-│   │   ├── utils/              # Ticket ID generator & Status transition state machine
-│   │   └── server.js           # Server bootstrap and lifecycle
-│   ├── package.json
-│   └── .env.example
-├── README.md
-└── .gitignore
+[ Admin Portal: Staff Management ]
+       │
+       ▼ Click "Add Staff Member"
+[ Enters Name, Official Email, Department, Employee ID ]
+       │
+       ▼ Backend validates data & checks email uniqueness
+[ Creates User with role: 'staff' and accountStatus: 'pending' ]
+       │
+       ▼ Generates 32-byte crypto random token (stores only SHA-256 hash in DB)
+[ Single-Use Activation Link generated with 7-day expiration ]
+       │
+       ▼ Copy Link / Dispatch to Technician
+[ Staff opens /activate-staff?token=... ]
+       │
+       ▼ Sets secure password (>= 6 chars)
+[ Backend marks invitation as used, updates accountStatus: 'active' ]
+       │
+       ▼
+[ Staff logs in at /staff/login ]
 ```
 
----
-
-## User Roles & Capabilities
-
-| Role | Permissions & Capabilities |
-| :--- | :--- |
-| **Student** | • Register student account (public registration strictly assigns student role).<br>• Report maintenance issues with category, building, room, priority, and optional photo.<br>• Real-time duplicate detection warning before ticket creation.<br>• Search and filter own reported issues.<br>• View status timeline and technician updates.<br>• Add discussion comments to own tickets.<br>• Confirm resolution and close resolved tickets. |
-| **Staff** | • Log in with technician credentials.<br>• View assigned work orders on technician dashboard.<br>• Transition issue status (`open` → `in_progress` → `resolved`).<br>• Record resolution notes and technical steps taken.<br>• Post public progress updates or private internal staff notes.<br>• Browse all campus facilities tickets in read-only directory. |
-| **Admin** | • Full campus-wide visibility across all buildings, hostels, and departments.<br>• Assign / reassign tickets to specific maintenance staff members.<br>• Override issue priority (Low, Medium, High) and status.<br>• Real-time aggregated campus analytics computed from live database records.<br>• Browse staff directory and contact technicians. |
-
----
-
-## Key Features
-
-1. **Role-Enforced Authentication & Security**
-   - JWT authentication stored securely with bearer token header injection.
-   - Passwords hashed using bcrypt (10 salt rounds) and omitted from all queries (`select: false`).
-   - Public registration strictly enforces `student` role to prevent privilege escalation.
-   - Comprehensive error handling masking database internals in production.
-
-2. **Automated Ticket ID & Audit History**
-   - Auto-generated human-readable ticket IDs (e.g. `FMC-2026-IT001`).
-   - Full timeline audit trail capturing every status transition, timestamp, user, and progress note.
-
-3. **Intelligent Duplicate Detection**
-   - Before submission, checks for unresolved tickets in the same building, room, and category.
-   - Prompts the user with a modal linking to existing tickets without blocking valid submissions.
-
-4. **Status Transition State Machine**
-   - Enforces valid lifecycle steps (`open` → `in_progress` → `resolved` → `closed`).
-   - Prevents unauthorized role transitions (e.g. students cannot resolve, staff only update assigned tickets).
-
-5. **Live Database Analytics (No Mock Data)**
-   - MongoDB Aggregations calculate total issues, status counts, unassigned issues, and average resolution time in hours.
-   - Visualized with Recharts donut charts (category distribution) and bar charts (location hotspots).
+> **Security Note:** Unactivated staff members (`accountStatus: 'pending'`) and deactivated staff members (`accountStatus: 'deactivated'`) are blocked from logging in with HTTP 403. Deactivating an account immediately revokes access even for active JWT tokens.
 
 ---
 
 ## Default Credentials (Demo Accounts)
 
-The database seed automatically configures realistic accounts. On the Login page (`/login`), click any demo button to log in with one click:
-
-| Role | Email | Password | Department / Notes |
+| Portal | Email | Password | Role / Department |
 | :--- | :--- | :--- | :--- |
-| **Admin** | `admin@campus.edu` | `Password123!` | Facilities & Operations |
-| **Staff (IT)** | `sarah.jenkins@campus.edu` | `Password123!` | IT & Network Infrastructure |
-| **Staff (Electrical)** | `david.miller@campus.edu` | `Password123!` | Electrical Maintenance |
-| **Staff (Plumbing)** | `robert.chang@campus.edu` | `Password123!` | Plumbing & Sanitation |
-| **Student** | `alex.rivera@student.edu` | `Password123!` | Computer Science |
-| **Student** | `emma.watson@student.edu` | `Password123!` | Mechanical Engineering |
+| **Admin Portal** | `admin@campus.edu` | `Password123!` | Admin (Facilities & Operations) |
+| **Staff Portal** | `david.miller@campus.edu` | `Password123!` | Staff (Electrical Maintenance) |
+| **Staff Portal** | `sarah.jenkins@campus.edu` | `Password123!` | Staff (IT & Network Infrastructure) |
+| **Staff Portal** | `robert.chang@campus.edu` | `Password123!` | Staff (Plumbing & Sanitation) |
+| **Student Portal** | `alex.rivera@student.edu` | `Password123!` | Student (Computer Science) |
+| **Student Portal** | `emma.watson@student.edu` | `Password123!` | Student (Mechanical Engineering) |
 
 ---
 
-## Local Setup Instructions
+## Local Setup & Execution Commands
 
 ### Prerequisites
-- **Node.js**: v18.0.0 or higher (v24.x tested)
-- **npm**: v9.0.0 or higher
-- Optional: MongoDB Atlas connection string (if omitted, an embedded in-memory MongoDB starts automatically for seamless zero-setup local execution)
+- Node.js >= 18.0.0
+- npm >= 9.0.0
+- MongoDB Atlas connection string (or leave blank to use embedded zero-setup in-memory MongoDB)
 
-### 1. Clone & Install Dependencies
-
+### 1. Install Dependencies
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd FixMyCampus
-
-# Install server dependencies
+# In server directory:
 cd server
 npm install
 
-# Install client dependencies
+# In client directory:
 cd ../client
 npm install
 cd ..
@@ -126,13 +104,12 @@ cd ..
 ```env
 PORT=5000
 NODE_ENV=development
-# Paste your MongoDB Atlas URI, or leave blank to use embedded MongoDB
-MONGODB_URI=
+MONGODB_URI=your_mongodb_atlas_connection_string
 JWT_SECRET=supersecret_fixmycampus_jwt_token_key_change_in_production
 JWT_EXPIRES_IN=7d
 CLIENT_URL=http://localhost:5173
 
-# Optional: Cloudinary
+# Optional: Cloudinary configuration for photo uploads
 CLOUDINARY_CLOUD_NAME=
 CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
@@ -143,26 +120,25 @@ CLOUDINARY_API_SECRET=
 VITE_API_URL=/api
 ```
 
-### 3. Seed Database & Run Integration Tests
-
+### 3. Run Automated Test Suites
 ```bash
-# Run the 26 backend integration tests (tests auth, status transitions, duplicate checks, analytics)
-cd server
+# 1. Run 15 Security & Role scenarios (staff invitations, privilege isolation, deactivations):
+npm run test:scenarios
+
+# 2. Run 12-Step End-to-End integration audit:
+npm run audit
+
+# 3. Run 26 Backend Regression tests:
 npm test
 ```
 
 ### 4. Start Development Servers
-
-Run both servers concurrently or in separate terminals:
-
 ```bash
-# Terminal 1: Backend API (runs on http://localhost:5000)
-cd server
-npm run dev
+# Terminal 1: Backend API (http://localhost:5000)
+npm run dev:server
 
-# Terminal 2: Frontend SPA (runs on http://localhost:5173)
-cd client
-npm run dev
+# Terminal 2: Frontend SPA (http://localhost:5173)
+npm run dev:client
 ```
 
 Open [http://localhost:5173](http://localhost:5173) in your browser.
@@ -171,59 +147,29 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ## API Reference
 
-### Health Check
-- `GET /api/health` — System status, uptime, and database connection state.
-
 ### Authentication
-- `POST /api/auth/register` — Register student account (`name`, `email`, `password`, `department`, `phone`).
-- `POST /api/auth/login` — Authenticate user and receive JWT (`email`, `password`).
-- `GET /api/auth/me` — Get current logged-in user identity (Bearer Token required).
+- `POST /api/auth/register` — Public student registration only.
+- `POST /api/auth/login` — Authenticate user (blocks pending and deactivated accounts).
+- `POST /api/auth/activate-staff` — Validates invitation token, sets password, activates staff account.
+- `GET /api/auth/me` — Current authenticated user identity.
 - `POST /api/auth/logout` — Invalidate user session.
 
-### Issues
-- `GET /api/issues` — List issues (supports `search`, `status`, `category`, `priority`, `building`, `page`, `limit`). Role-filtered.
-- `POST /api/issues` — Create issue with multipart photo upload (`title`, `description`, `category`, `building`, `room`, `priority`, `image`).
-- `POST /api/issues/check-duplicates` — Check for potential duplicate tickets in same building/category.
-- `GET /api/issues/:id` — Get single issue with full status history and assigned staff.
-- `PATCH /api/issues/:id/status` — Transition status (`status`, `note`).
-- `PATCH /api/issues/:id/assign` — Assign issue to staff member (`staffId`, `note`) [Admin only].
-- `PATCH /api/issues/:id/priority` — Adjust priority (`priority`) [Admin only].
+### Admin Staff Management (Admin Only)
+- `GET /api/admin/staff` — List staff members with assigned issue count and invitation status.
+- `POST /api/admin/staff` — Create staff account and issue single-use invitation.
+- `PATCH /api/admin/staff/:id/status` — Deactivate or reactivate a staff member.
+- `POST /api/admin/staff/:id/resend-invitation` — Revoke previous invitation and issue new token safely.
 
-### Comments
-- `GET /api/issues/:issueId/comments` — Get discussions on authorized issue.
-- `POST /api/issues/:issueId/comments` — Add comment (`content`, `isInternal`).
+### Issues & Workflows
+- `GET /api/issues` — List issues (supports search, category, status, priority, building, pagination).
+- `POST /api/issues` — Create issue with optional photo upload.
+- `POST /api/issues/check-duplicates` — Check for potential duplicate tickets in same location.
+- `GET /api/issues/:id` — View issue details, populated technician, and status history.
+- `PATCH /api/issues/:id/status` — Update issue status (assigned staff / admin / student close).
+- `PATCH /api/issues/:id/assign` — Assign issue to active staff member (Admin only).
+- `PATCH /api/issues/:id/priority` — Adjust priority (Admin only).
+- `GET /api/issues/:issueId/comments` — View issue discussion and technician notes.
+- `POST /api/issues/:issueId/comments` — Add comment (supports internal staff notes).
 
-### Analytics & Users
-- `GET /api/analytics` — Real-time MongoDB metrics and aggregations [Admin only].
-- `GET /api/users/staff` — List active campus technicians for assignment [Admin & Staff].
-- `GET /api/users` — List campus users [Admin only].
-
----
-
-## Deployment Guide
-
-### Database: MongoDB Atlas
-1. Create a free cluster on [MongoDB Atlas](https://www.mongodb.com/cloud/atlas).
-2. Create a database user and whitelist `0.0.0.0/0` in Network Access.
-3. Copy the connection string: `mongodb+srv://<username>:<password>@cluster0.mongodb.net/fixmycampus?retryWrites=true&w=majority`.
-
-### Backend: Render
-1. Create a new **Web Service** on [Render](https://render.com) connected to your repository.
-2. Root Directory: `server`
-3. Build Command: `npm install`
-4. Start Command: `npm start`
-5. Add Environment Variables:
-   - `NODE_ENV`: `production`
-   - `PORT`: `10000`
-   - `MONGODB_URI`: `<Your MongoDB Atlas Connection String>`
-   - `JWT_SECRET`: `<Secure Random String>`
-   - `CLIENT_URL`: `<Your Vercel Frontend URL>`
-
-### Frontend: Vercel
-1. Create a new project on [Vercel](https://vercel.com) connected to your repository.
-2. Root Directory: `client`
-3. Framework Preset: `Vite`
-4. Build Command: `npm run build`
-5. Output Directory: `dist`
-6. Add Environment Variable:
-   - `VITE_API_URL`: `<Your Render Backend URL, e.g. https://fixmycampus-api.onrender.com/api>`
+### Analytics
+- `GET /api/analytics` — Real-time live MongoDB aggregations for dashboard metrics (Admin only).

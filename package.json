@@ -8,6 +8,7 @@
     "seed": "npm --prefix server run seed",
     "test": "npm --prefix server test",
     "audit": "npm --prefix server run test:audit",
+    "test:scenarios": "npm --prefix server run test:scenarios",
     "build": "npm --prefix client run build",
     "start": "npm --prefix server start"
   }

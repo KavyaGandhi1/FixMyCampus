@@ -5,8 +5,8 @@ import User from '../models/User.js';
 // @access  Private (Admin & Staff)
 export const getStaffMembers = async (req, res, next) => {
   try {
-    const staff = await User.find({ role: 'staff', isActive: true })
-      .select('name email department phone')
+    const staff = await User.find({ role: 'staff', isActive: true, accountStatus: 'active' })
+      .select('name email department phone employeeId')
       .sort({ name: 1 });
 
     res.status(200).json({

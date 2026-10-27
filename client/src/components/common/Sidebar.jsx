@@ -21,7 +21,7 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         { to: '/admin', label: 'Admin Dashboard', icon: LayoutDashboard },
         { to: '/issues', label: 'All Campus Issues', icon: ClipboardList },
         { to: '/issues/new', label: 'Report Issue', icon: PlusCircle },
-        { to: '/admin/staff', label: 'Staff & Maintenance', icon: Users },
+        { to: '/admin/staff', label: 'Staff Management', icon: Users },
       ];
     }
     if (isStaff) {

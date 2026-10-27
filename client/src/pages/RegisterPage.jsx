@@ -210,8 +210,8 @@ export const RegisterPage = () => {
           <div className="mt-6 text-center">
             <p className="text-xs text-slate-500">
               Already have an account?{' '}
-              <Link to="/login" className="font-semibold text-blue-600 hover:text-blue-700">
-                Sign in here
+              <Link to="/student/login" className="font-semibold text-emerald-700 hover:text-emerald-800">
+                Sign in to Student Portal
               </Link>
             </p>
           </div>

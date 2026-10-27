@@ -315,10 +315,10 @@ export const assignIssue = async (req, res, next) => {
     let staff = null;
     if (staffId) {
       staff = await User.findById(staffId);
-      if (!staff || staff.role !== 'staff') {
+      if (!staff || staff.role !== 'staff' || staff.accountStatus !== 'active' || !staff.isActive) {
         return res.status(400).json({
           success: false,
-          message: 'Selected user is not a valid staff member.'
+          message: 'Selected user is not an active staff member.'
         });
       }
     }

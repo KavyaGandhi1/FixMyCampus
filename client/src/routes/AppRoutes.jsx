@@ -1,12 +1,18 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { MainLayout } from '../layouts/MainLayout';
 import { ProtectedRoute } from './ProtectedRoute';
 
-// Pages
-import { LoginPage } from '../pages/LoginPage';
+// Portal Landing & Auth Pages
+import { LandingPage } from '../pages/LandingPage';
+import { StudentLoginPage } from '../pages/auth/StudentLoginPage';
+import { StaffLoginPage } from '../pages/auth/StaffLoginPage';
+import { AdminLoginPage } from '../pages/auth/AdminLoginPage';
+import { ActivateStaffPage } from '../pages/auth/ActivateStaffPage';
 import { RegisterPage } from '../pages/RegisterPage';
+import { LoginPage } from '../pages/LoginPage';
+
+// Portal Dashboards & Workflow Pages
 import { StudentDashboardPage } from '../pages/StudentDashboardPage';
 import { StaffDashboardPage } from '../pages/StaffDashboardPage';
 import { AdminDashboardPage } from '../pages/AdminDashboardPage';
@@ -16,28 +22,27 @@ import { CreateIssuePage } from '../pages/CreateIssuePage';
 import { IssueDetailPage } from '../pages/IssueDetailPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 
-const RootRedirect = () => {
-  const { user, isAuthenticated, loading } = useAuth();
-
-  if (loading) return null;
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
-
-  if (user?.role === 'admin') return <Navigate to="/admin" replace />;
-  if (user?.role === 'staff') return <Navigate to="/staff" replace />;
-  return <Navigate to="/student" replace />;
-};
-
 export const AppRoutes = () => {
   return (
     <Routes>
-      {/* Public Authentication Routes */}
+      {/* 1. Landing Page with Exactly Three Portals */}
+      <Route path="/" element={<LandingPage />} />
+
+      {/* 2. Portal-Specific Login & Registration Pages */}
+      <Route path="/student/login" element={<StudentLoginPage />} />
+      <Route path="/student/register" element={<RegisterPage />} />
+
+      <Route path="/staff/login" element={<StaffLoginPage />} />
+      <Route path="/staff/activate" element={<ActivateStaffPage />} />
+      <Route path="/activate-staff" element={<ActivateStaffPage />} />
+
+      <Route path="/admin/login" element={<AdminLoginPage />} />
+
+      {/* General aliases for convenience */}
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/register" element={<Navigate to="/student/register" replace />} />
 
-      {/* Root redirect to respective role dashboard */}
-      <Route path="/" element={<RootRedirect />} />
-
-      {/* Protected SaaS Application Shell */}
+      {/* 3. Protected Portals Shell */}
       <Route
         element={
           <ProtectedRoute>
@@ -45,7 +50,7 @@ export const AppRoutes = () => {
           </ProtectedRoute>
         }
       >
-        {/* Student Route */}
+        {/* Student Portal Dashboard */}
         <Route
           path="/student"
           element={
@@ -55,7 +60,7 @@ export const AppRoutes = () => {
           }
         />
 
-        {/* Staff Route */}
+        {/* Staff Portal Dashboard */}
         <Route
           path="/staff"
           element={
@@ -65,7 +70,7 @@ export const AppRoutes = () => {
           }
         />
 
-        {/* Admin Routes */}
+        {/* Admin Portal Dashboard & Staff Management */}
         <Route
           path="/admin"
           element={
@@ -83,13 +88,13 @@ export const AppRoutes = () => {
           }
         />
 
-        {/* Shared Issue Management */}
+        {/* Shared Workflows: Issues List, Report Issue, Issue Details */}
         <Route path="/issues" element={<IssueListPage />} />
         <Route path="/issues/new" element={<CreateIssuePage />} />
         <Route path="/issues/:id" element={<IssueDetailPage />} />
       </Route>
 
-      {/* 404 Route */}
+      {/* 404 Fallback */}
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );

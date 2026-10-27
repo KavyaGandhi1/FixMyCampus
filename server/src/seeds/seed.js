@@ -2,10 +2,12 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import mongoose from 'mongoose';
+import crypto from 'crypto';
 import { connectDB, closeDB } from '../config/db.js';
 import User from '../models/User.js';
 import Issue from '../models/Issue.js';
 import Comment from '../models/Comment.js';
+import Invitation from '../models/Invitation.js';
 
 export const seedData = async () => {
   try {
@@ -15,6 +17,7 @@ export const seedData = async () => {
     await User.deleteMany({});
     await Issue.deleteMany({});
     await Comment.deleteMany({});
+    await Invitation.deleteMany({});
     console.log('🧹 Existing collections cleaned.');
 
     // 1. Create Users
@@ -24,7 +27,9 @@ export const seedData = async () => {
       password: 'Password123!',
       role: 'admin',
       department: 'Facilities & Operations',
+      employeeId: 'ADM-001',
       phone: '+1-555-0100',
+      accountStatus: 'active',
       isActive: true
     });
 
@@ -34,7 +39,9 @@ export const seedData = async () => {
       password: 'Password123!',
       role: 'staff',
       department: 'IT & Network Infrastructure',
+      employeeId: 'EMP-IT-01',
       phone: '+1-555-0101',
+      accountStatus: 'active',
       isActive: true
     });
 
@@ -44,7 +51,9 @@ export const seedData = async () => {
       password: 'Password123!',
       role: 'staff',
       department: 'Electrical Maintenance',
+      employeeId: 'EMP-EL-02',
       phone: '+1-555-0102',
+      accountStatus: 'active',
       isActive: true
     });
 
@@ -54,8 +63,33 @@ export const seedData = async () => {
       password: 'Password123!',
       role: 'staff',
       department: 'Plumbing & Sanitation',
+      employeeId: 'EMP-PL-03',
       phone: '+1-555-0103',
+      accountStatus: 'active',
       isActive: true
+    });
+
+    // Sample pending staff member with an active invitation
+    const staffPending = await User.create({
+      name: 'Marcus Vance',
+      email: 'marcus.vance@campus.edu',
+      role: 'staff',
+      department: 'HVAC & Refrigeration',
+      employeeId: 'EMP-HVAC-04',
+      phone: '+1-555-0104',
+      accountStatus: 'pending',
+      isActive: true
+    });
+
+    const demoRawToken = 'test-staff-invitation-token-2026';
+    const demoTokenHash = crypto.createHash('sha256').update(demoRawToken).digest('hex');
+    await Invitation.create({
+      staffUser: staffPending._id,
+      tokenHash: demoTokenHash,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      isUsed: false,
+      isRevoked: false,
+      createdBy: admin._id
     });
 
     const studentAlex = await User.create({
@@ -65,6 +99,7 @@ export const seedData = async () => {
       role: 'student',
       department: 'Computer Science',
       phone: '+1-555-0201',
+      accountStatus: 'active',
       isActive: true
     });
 
@@ -75,6 +110,7 @@ export const seedData = async () => {
       role: 'student',
       department: 'Mechanical Engineering',
       phone: '+1-555-0202',
+      accountStatus: 'active',
       isActive: true
     });
 

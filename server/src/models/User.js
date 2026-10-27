@@ -22,7 +22,10 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, 'Password is required'],
+      required: function () {
+        // Pending staff members do not have a password until invitation activation
+        return this.accountStatus !== 'pending';
+      },
       minlength: [6, 'Password must be at least 6 characters long'],
       select: false
     },
@@ -35,6 +38,17 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: ''
+    },
+    employeeId: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    accountStatus: {
+      type: String,
+      enum: ['pending', 'active', 'deactivated'],
+      default: 'active',
+      index: true
     },
     phone: {
       type: String,
@@ -51,9 +65,17 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Hash password before saving
+// Keep isActive in sync with accountStatus before saving
+userSchema.pre('save', function (next) {
+  if (this.isModified('accountStatus')) {
+    this.isActive = this.accountStatus === 'active';
+  }
+  next();
+});
+
+// Hash password before saving if set or modified
 userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) {
+  if (!this.password || !this.isModified('password')) {
     return next();
   }
   const salt = await bcrypt.genSalt(10);
@@ -63,10 +85,11 @@ userSchema.pre('save', async function (next) {
 
 // Compare password
 userSchema.methods.matchPassword = async function (enteredPassword) {
+  if (!this.password) return false;
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// Transform output to ensure password is never exposed
+// Transform output to ensure password and internal fields are never exposed
 userSchema.set('toJSON', {
   transform: (doc, ret) => {
     delete ret.password;

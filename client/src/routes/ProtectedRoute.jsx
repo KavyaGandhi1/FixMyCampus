@@ -16,7 +16,17 @@ export const ProtectedRoute = ({ children, allowedRoles }) => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    // Direct unauthenticated user to their specific portal's login page
+    if (location.pathname.startsWith('/admin')) {
+      return <Navigate to="/admin/login" state={{ from: location }} replace />;
+    }
+    if (location.pathname.startsWith('/staff')) {
+      return <Navigate to="/staff/login" state={{ from: location }} replace />;
+    }
+    if (location.pathname.startsWith('/student')) {
+      return <Navigate to="/student/login" state={{ from: location }} replace />;
+    }
+    return <Navigate to="/" state={{ from: location }} replace />;
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {

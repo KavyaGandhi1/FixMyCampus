@@ -1,5 +1,7 @@
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import Invitation from '../models/Invitation.js';
 
 const generateToken = (id, role) => {
   return jwt.sign(
@@ -11,7 +13,7 @@ const generateToken = (id, role) => {
   );
 };
 
-// @desc    Register a new student account
+// @desc    Register a new student account (Public Registration)
 // @route   POST /api/auth/register
 // @access  Public
 export const register = async (req, res, next) => {
@@ -47,14 +49,16 @@ export const register = async (req, res, next) => {
       password,
       department: department?.trim() || '',
       phone: phone?.trim() || '',
-      role: 'student'
+      role: 'student',
+      accountStatus: 'active',
+      isActive: true
     });
 
     const token = generateToken(user._id, user.role);
 
     res.status(201).json({
       success: true,
-      message: 'Registration successful.',
+      message: 'Student registration successful.',
       token,
       user
     });
@@ -79,23 +83,39 @@ export const login = async (req, res, next) => {
 
     const user = await User.findOne({ email: email.toLowerCase().trim() }).select('+password');
 
-    if (!user || !(await user.matchPassword(password))) {
+    if (!user) {
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password.'
       });
     }
 
-    if (!user.isActive) {
+    // Check if staff account is still pending activation
+    if (user.accountStatus === 'pending') {
+      return res.status(403).json({
+        success: false,
+        message: 'Your staff account is pending activation. Please use the activation link sent by your administrator to set your password.'
+      });
+    }
+
+    // Check if account has been deactivated
+    if (user.accountStatus === 'deactivated' || !user.isActive) {
       return res.status(403).json({
         success: false,
         message: 'Your account has been deactivated. Please contact campus admin.'
       });
     }
 
+    if (!(await user.matchPassword(password))) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password.'
+      });
+    }
+
     const token = generateToken(user._id, user.role);
 
-    // Remove password before sending
+    // Remove password before sending response
     user.password = undefined;
 
     res.status(200).json({
@@ -103,6 +123,93 @@ export const login = async (req, res, next) => {
       message: 'Login successful.',
       token,
       user
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Activate staff account via invitation token and set password
+// @route   POST /api/auth/activate-staff
+// @access  Public
+export const activateStaff = async (req, res, next) => {
+  try {
+    const { token, password } = req.body;
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invitation token is required.'
+      });
+    }
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long.'
+      });
+    }
+
+    // Hash the incoming raw token to look up in the database
+    const tokenHash = crypto.createHash('sha256').update(token.trim()).digest('hex');
+
+    const invitation = await Invitation.findOne({
+      tokenHash,
+      isUsed: false,
+      isRevoked: false
+    });
+
+    if (!invitation) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid, revoked, or already-used invitation link. Please request a new invitation from your administrator.'
+      });
+    }
+
+    // Check expiration
+    if (new Date() > invitation.expiresAt) {
+      return res.status(400).json({
+        success: false,
+        message: 'This invitation link has expired. Please contact your administrator to resend an invitation.'
+      });
+    }
+
+    const staffUser = await User.findById(invitation.staffUser);
+    if (!staffUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'Associated staff account no longer exists.'
+      });
+    }
+
+    if (staffUser.accountStatus === 'deactivated') {
+      return res.status(403).json({
+        success: false,
+        message: 'This staff account has been deactivated by an administrator.'
+      });
+    }
+
+    // Activate staff account and set password
+    staffUser.password = password;
+    staffUser.accountStatus = 'active';
+    staffUser.isActive = true;
+    await staffUser.save();
+
+    // Mark invitation as used
+    invitation.isUsed = true;
+    invitation.usedAt = new Date();
+    await invitation.save();
+
+    // Invalidate any other pending invitations for this user
+    await Invitation.updateMany(
+      { staffUser: staffUser._id, _id: { $ne: invitation._id }, isUsed: false },
+      { isRevoked: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Staff account activated successfully! You can now log in to the Staff Portal.',
+      email: staffUser.email
     });
   } catch (error) {
     next(error);

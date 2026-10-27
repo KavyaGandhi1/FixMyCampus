@@ -11,6 +11,11 @@ export const authApi = {
     return response.data;
   },
 
+  activateStaff: async (payload) => {
+    const response = await api.post('/auth/activate-staff', payload);
+    return response.data;
+  },
+
   getMe: async () => {
     const response = await api.get('/auth/me');
     return response.data;
