@@ -173,3 +173,95 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ### Analytics
 - `GET /api/analytics` — Real-time live MongoDB aggregations for dashboard metrics (Admin only).
+
+---
+
+## 🚀 Deploying to Vercel
+
+FixMyCampus is configured for zero-friction Vercel deployment. You can deploy it in one of two architectures:
+
+### Option A: All-in-One Single Vercel Project (Recommended)
+Both the Vite React frontend and the Express Serverless API are hosted inside a single Vercel project under the same domain. This eliminates cross-origin CORS issues and avoids running two separate services.
+
+#### 1. Configure MongoDB Atlas
+1. Log in to [MongoDB Atlas](https://cloud.mongodb.com/).
+2. Under **Security** → **Database Access**, create a database user with **Read and write to any database** permissions.
+3. Under **Security** → **Network Access**, click **Add IP Address** and choose **Allow Access From Anywhere** (`0.0.0.0/0`).
+   > *Note: Vercel serverless functions use dynamic IP addresses across AWS regions, requiring `0.0.0.0/0` access.*
+4. Under **Deployment** → **Database**, click **Connect** → **Drivers** → Copy your connection string:
+   ```
+   mongodb+srv://<username>:<password>@cluster0.mongodb.net/fixmycampus?retryWrites=true&w=majority
+   ```
+
+#### 2. Push Repository to GitHub
+Ensure all changes are committed and pushed to your GitHub repository:
+```bash
+git add .
+git commit -m "feat: configure FixMyCampus for Vercel deployment"
+git push origin master
+```
+
+#### 3. Import Project into Vercel
+1. Log in to your [Vercel Dashboard](https://vercel.com/dashboard).
+2. Click **Add New...** → **Project**.
+3. Import your FixMyCampus GitHub repository.
+4. Leave **Root Directory** as `./` (Project Root).
+5. The build settings in `vercel.json` are preconfigured:
+   - **Build Command:** `npm --prefix client run build`
+   - **Output Directory:** `client/dist`
+   - **Framework Preset:** `Vite` (or `Other`)
+6. Open **Environment Variables** and add the following keys:
+   | Variable Name | Example Value | Description |
+   | :--- | :--- | :--- |
+   | `MONGODB_URI` | `mongodb+srv://user:pass@cluster.mongodb.net/fixmycampus?retryWrites=true&w=majority` | Your live MongoDB Atlas connection string. |
+   | `JWT_SECRET` | `supersecret_production_key_random_32_chars_min` | Strong secret for signing authentication JWT tokens. |
+   | `JWT_EXPIRES_IN` | `7d` | Token expiration period. |
+   | `NODE_ENV` | `production` | Production environment flag. |
+   | `FRONTEND_URL` | `https://your-project.vercel.app` | Your Vercel domain (used for CORS and staff invitation URLs). |
+   | `CLIENT_URL` | `https://your-project.vercel.app` | Same as `FRONTEND_URL`. |
+   | `VITE_API_BASE_URL` | `/api` | Kept as `/api` for same-domain serverless routing. |
+7. Click **Deploy**.
+8. Once the build finishes, your site is live with:
+   - Frontend SPA at `https://your-project.vercel.app`
+   - Serverless Express API at `https://your-project.vercel.app/api/*`
+
+---
+
+### Option B: Split Vercel Projects (Separate Frontend & Backend)
+
+If you prefer two separate Vercel projects (e.g., `fixmycampus-web` and `fixmycampus-api`):
+
+#### Project 1: Backend API (`fixmycampus-api`)
+1. Import the repository into Vercel.
+2. In Project Settings:
+   - **Root Directory:** `./`
+   - **Environment Variables:**
+     - `MONGODB_URI`: Your MongoDB Atlas URI.
+     - `JWT_SECRET`: Production JWT secret.
+     - `FRONTEND_URL`: `https://fixmycampus-web.vercel.app`
+     - `CLIENT_URL`: `https://fixmycampus-web.vercel.app`
+     - `NODE_ENV`: `production`
+
+#### Project 2: Frontend SPA (`fixmycampus-web`)
+1. Import the same repository into Vercel as a new project.
+2. In Project Settings:
+   - **Root Directory:** `client`
+   - **Framework Preset:** `Vite`
+   - **Build Command:** `npm run build`
+   - **Output Directory:** `dist`
+   - `client/vercel.json` is already included to guarantee that refreshing nested routes (e.g. `/student/login`, `/admin/staff`) rewrites to `index.html`.
+3. In **Environment Variables**:
+   - `VITE_API_BASE_URL`: `https://fixmycampus-api.vercel.app/api`
+4. Click **Deploy**.
+
+---
+
+## 🔐 Staff Invitation & Activation Lifecycle on Vercel
+
+1. **Admin Issues Invitation**: In the Admin Portal (`/admin/staff`), clicking **Add Staff Member** creates a pending staff record and generates a single-use 256-bit token. Only its SHA-256 hash is saved to MongoDB.
+2. **Activation URL Delivery**:
+   - If SMTP is configured (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`), the system can dispatch an activation email.
+   - If SMTP is omitted, the activation link (`https://your-project.vercel.app/activate-staff?token=...`) is securely displayed inside the Admin interface modal and table with a 1-click **Copy Link** button.
+3. **Staff Sets Password**: The staff member visits the activation link, establishes their password, and activates their account.
+4. **Login**: Staff members log in through the dedicated Staff Portal at `/staff/login`.
+5. **Immediate Access Control**: Deactivating a staff member in `/admin/staff` immediately blocks active JWT tokens via backend middleware checks (`accountStatus: 'deactivated'`).

@@ -110,8 +110,11 @@ export const createStaffMember = async (req, res, next) => {
       createdBy: req.user._id
     });
 
-    // 3. Construct activation link for local testing or email dispatch
-    const clientBase = process.env.CLIENT_URL || 'http://localhost:5173';
+    // 3. Construct activation link with support for production FRONTEND_URL or Vercel host
+    const clientBase =
+      process.env.FRONTEND_URL ||
+      process.env.CLIENT_URL ||
+      (req.headers.origin ? req.headers.origin : (req.headers.host ? `${req.headers['x-forwarded-proto'] === 'https' || req.protocol === 'https' ? 'https' : 'http'}://${req.headers.host}` : 'http://localhost:5173'));
     const activationUrl = `${clientBase}/activate-staff?token=${rawToken}`;
 
     res.status(201).json({
@@ -230,7 +233,10 @@ export const resendStaffInvitation = async (req, res, next) => {
       await staffUser.save();
     }
 
-    const clientBase = process.env.CLIENT_URL || 'http://localhost:5173';
+    const clientBase =
+      process.env.FRONTEND_URL ||
+      process.env.CLIENT_URL ||
+      (req.headers.origin ? req.headers.origin : (req.headers.host ? `${req.headers['x-forwarded-proto'] === 'https' || req.protocol === 'https' ? 'https' : 'http'}://${req.headers.host}` : 'http://localhost:5173'));
     const activationUrl = `${clientBase}/activate-staff?token=${rawToken}`;
 
     res.status(200).json({

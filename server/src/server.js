@@ -16,22 +16,30 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Enable CORS with dynamic local support
+// Enable CORS with dynamic local and production support
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
   'http://127.0.0.1:5173',
-  process.env.CLIENT_URL
+  process.env.CLIENT_URL,
+  process.env.FRONTEND_URL
 ].filter(Boolean);
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, Postman)
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Allow requests with no origin (like mobile apps, curl, Postman, server-to-server)
+      if (!origin) return callback(null, true);
+
+      // Check explicit allowed origins or any vercel.app preview domain
+      if (
+        allowedOrigins.includes(origin) ||
+        origin.endsWith('.vercel.app') ||
+        process.env.NODE_ENV !== 'production'
+      ) {
         return callback(null, true);
       }
-      return callback(null, true); // Permissive in dev/testing for smooth pair-programming
+      return callback(new Error(`Origin ${origin} not allowed by CORS`));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -53,6 +61,14 @@ app.use('/api/issues', issueRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin/staff', adminStaffRoutes);
+
+// Direct mounts if /api prefix is stripped by proxy/rewrites
+app.use('/health', healthRoutes);
+app.use('/auth', authRoutes);
+app.use('/issues', issueRoutes);
+app.use('/analytics', analyticsRoutes);
+app.use('/users', userRoutes);
+app.use('/admin/staff', adminStaffRoutes);
 
 // 404 and Error Handling
 app.use(notFoundHandler);
@@ -86,7 +102,12 @@ export const startServer = async () => {
   });
 };
 
-if (process.argv[1]?.endsWith('server.js') || process.argv[1]?.endsWith('index.js')) {
+const isRunningDirectly =
+  !process.env.VERCEL &&
+  (process.argv[1]?.endsWith('server.js') ||
+   (process.argv[1]?.endsWith('index.js') && !process.argv[1]?.replace(/\\/g, '/').includes('/api/index.js')));
+
+if (isRunningDirectly) {
   startServer().catch((err) => {
     console.error('Failed to start server:', err);
     process.exit(1);

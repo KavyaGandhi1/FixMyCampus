@@ -2,6 +2,11 @@
   "name": "fixmycampus-workspace",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
+  "workspaces": [
+    "server",
+    "client"
+  ],
   "scripts": {
     "dev:server": "npm --prefix server run dev",
     "dev:client": "npm --prefix client run dev",
@@ -11,5 +16,17 @@
     "test:scenarios": "npm --prefix server run test:scenarios",
     "build": "npm --prefix client run build",
     "start": "npm --prefix server start"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.1.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.5.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.3.1",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1"
   }
 }

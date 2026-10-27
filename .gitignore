@@ -24,6 +24,9 @@ logs/
 uploads/
 scratch/
 
+# Vercel deployment artifacts
+.vercel/
+
 # OS metadata
 .DS_Store
 Thumbs.db

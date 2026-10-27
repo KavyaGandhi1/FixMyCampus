@@ -94,7 +94,7 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
             For active water pipe bursts, gas leaks, or fire emergencies, call Campus Security immediately.
           </p>
           <div className="text-xs font-mono font-bold text-slate-800">
-            Emergency Desk: Ext. 4444
+            Emergency Desk:  202-181-4047
           </div>
         </div>
       </aside>
