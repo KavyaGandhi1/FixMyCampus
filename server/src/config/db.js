@@ -3,10 +3,20 @@ import mongoose from 'mongoose';
 let mongoMemoryServer = null;
 
 export const connectDB = async () => {
-  try {
-    let mongoUri = process.env.MONGODB_URI;
+  if (mongoose.connection.readyState === 1) {
+    return mongoose.connection;
+  }
 
-    if (!mongoUri) {
+  try {
+    let mongoUri = process.env.MONGODB_URI ? process.env.MONGODB_URI.trim().replace(/^["']|["']$/g, '') : '';
+
+    if (mongoUri) {
+      // Ensure database name and options are appended if URI ends with cluster root
+      if (mongoUri.endsWith('.mongodb.net/') || mongoUri.endsWith('.mongodb.net')) {
+        const separator = mongoUri.endsWith('/') ? '' : '/';
+        mongoUri = `${mongoUri}${separator}fixmycampus?retryWrites=true&w=majority`;
+      }
+    } else {
       console.log('ℹ️  No MONGODB_URI found. Initializing embedded in-memory MongoDB for local execution...');
       try {
         const { MongoMemoryServer } = await import('mongodb-memory-server');
