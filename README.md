@@ -1,267 +1,384 @@
-# FixMyCampus
+# FixMyCampus 🏫
+### Campus Issue Reporting and Management System
 
-**FixMyCampus** is a full-stack campus incident management and facilities maintenance software platform designed for universities and student hostels. Students report infrastructure faults (Wi-Fi outages, plumbing leaks, electrical hazards, broken classroom AV), campus maintenance technicians triage and repair them, and administrators oversee operations with real-time analytics.
+FixMyCampus is a web-based platform designed to streamline the reporting, assignment, tracking, and resolution of campus maintenance issues. It connects students, administrators, and staff through a centralized system that improves transparency, accountability, and communication.
 
----
+**Live Application:** [Insert your Vercel frontend URL]
 
-## The Exactly Three Portals
+**Backend API:** [Insert your Render backend URL]
 
-The application is structured into **exactly three main user portals**:
+**GitHub Repository:** [Insert your GitHub repository URL]
 
-1. **Student Portal** (`/student`, login at `/student/login`)
-   - Public student registration (`/student/register`).
-   - Report issues with title, description, category, building, room number, priority, and optional photo.
-   - Intelligent duplicate detection alerts before submission.
-   - Track live ticket statuses (`Open`, `In Progress`, `Resolved`, `Closed`).
-   - View technician audit history and participate in issue discussion comments.
-   - Confirm resolution to close tickets.
-
-2. **Staff Portal** (`/staff`, login at `/staff/login`)
-   - Accessible strictly through credentials established via **admin-issued invitations**. Public staff registration is strictly prohibited.
-   - View assigned work orders.
-   - Update issue status through valid state transitions (`Open` → `In Progress` → `Resolved`).
-   - Record diagnosis notes, resolution notes, and post progress comments or internal staff notes.
-   - Immediate session revocation if account is deactivated by an administrator.
-
-3. **Admin Portal** (`/admin`, login at `/admin/login`)
-   - Campus-wide facilities oversight and incident management.
-   - Assign / reassign issues to registered active staff members.
-   - Adjust issue priorities (Low, Medium, High).
-   - Real-time MongoDB aggregated analytics (resolution times, category charts, location hotspots).
-   - **Staff Management** (`/admin/staff`):
-     - Onboard technicians with name, official email, department, and optional employee ID.
-     - Automatically generates secure, single-use, 7-day cryptographically hashed invitation tokens.
-     - View staff directory with assigned issue metrics and account status (`Active`, `Invitation Pending`, `Deactivated`).
-     - Deactivate / reactivate accounts or resend / revoke invitations.
+**Demo Video:** [Google Drive demo video link — to be added]
 
 ---
 
-## Admin-Controlled Staff Invitation & Activation Workflow
+## 1. Problem Statement
 
-Staff accounts can **never** be created through public registration. The secure onboarding process:
+Colleges and hostels frequently face maintenance issues such as malfunctioning classroom equipment, electrical problems, water leakage, Wi-Fi connectivity issues, and cleanliness concerns.
 
+Traditional complaint management methods can make it difficult for students to report problems, track their progress, and determine whether they have been resolved. Administrators may also struggle to assign responsibilities, monitor staff performance, and maintain an organized record of complaints.
+
+FixMyCampus addresses these challenges by providing a centralized digital platform for reporting, assigning, tracking, and managing campus maintenance issues.
+
+## 2. Target Users
+
+FixMyCampus is designed for three categories of users:
+
+### Students
+Students can report campus problems, track their submitted complaints, and monitor resolution progress.
+
+### Administrators
+Administrators can manage reported issues, register staff members, assign tasks, prioritize complaints, and monitor campus maintenance activity.
+
+### Staff Members
+Staff members can view their assigned issues, update their status, and communicate progress through comments.
+
+## 3. Solution
+
+FixMyCampus provides three dedicated portals: Student, Admin, and Staff.
+
+Students can submit maintenance requests through a structured reporting form. Administrators can review incoming requests, assign them to registered staff members, and monitor their progress. Staff members can access their assigned tasks and update their status as work progresses.
+
+The platform maintains issue records in a database, allowing users to retrieve relevant information and follow the progress of reported problems.
+
+Staff registration is controlled by administrators, helping prevent unauthorized public creation of staff accounts.
+
+By centralizing these workflows, FixMyCampus aims to make campus maintenance management more organized, transparent, and efficient.
+
+## 4. Key Features
+
+### Student Portal
+- Student registration and login.
+- Submit campus maintenance complaints.
+- Provide issue descriptions and location details.
+- View previously submitted complaints.
+- Track issue status and resolution progress.
+- Access relevant issue information.
+
+### Admin Portal
+- View and manage reported campus issues.
+- Register staff members through the administrative interface.
+- Manage staff account information.
+- Assign issues to appropriate staff members.
+- Set or manage issue priorities.
+- Monitor issue progress.
+- View maintenance statistics and analytics, where implemented.
+
+### Staff Portal
+- Secure staff login.
+- Access assigned maintenance issues.
+- View issue details.
+- Update issue status.
+- Add comments or progress updates, where implemented.
+- Track assigned work.
+
+### Security and Access Control
+- Role-based access for students, administrators, and staff.
+- Protected routes and authenticated API endpoints.
+- Password hashing and secure authentication, according to the implemented authentication system.
+- Restricted staff registration.
+- Backend authorization to prevent unauthorized operations.
+
+### Issue Tracking
+- Centralized issue records.
+- Status tracking, including Open, In Progress, and Resolved, where supported.
+- Issue assignment and progress monitoring.
+- Persistent database storage.
+
+## 5. Technology Stack
+
+| Component | Technology | Purpose |
+|---|---|---|
+| Frontend | React.js | Building the user interface |
+| Frontend tooling | Vite | Development server and production build |
+| Backend | Node.js | Server-side JavaScript runtime |
+| API framework | Express.js | Handling API requests and application logic |
+| Database | MongoDB | Storing users, issues, and related records |
+| Database integration | Mongoose | Data models, validation, and database operations |
+| Authentication | JWT and bcrypt, if implemented | Authentication and password security |
+| Version control | Git | Tracking source code changes |
+| Source hosting | GitHub | Hosting the project repository |
+| Frontend deployment | Vercel | Hosting the frontend application |
+| Backend deployment | Render | Hosting the backend API |
+
+*Note: The table should reflect the technologies actually present in the final implementation. Remove any technology that your project does not use.*
+
+## 6. Application Architecture
+
+FixMyCampus follows a client-server architecture.
+
+### Frontend
+The React frontend provides the user interface for all three portals. It handles user interactions, forms, navigation, and the display of issue information.
+
+### Backend
+The Node.js and Express.js backend processes API requests, validates input, applies application rules, authenticates users, and enforces authorization.
+
+### Database
+MongoDB stores persistent application data, including user accounts, reported issues, assignments, and other supported records.
+
+### Authentication and Authorization
+The authentication system verifies user identity. Role-based authorization determines which operations each user can perform.
+
+### Deployment Architecture
+
+**Student / Admin / Staff → React Frontend (Vercel) → Express Backend API (Render) → MongoDB Database**
+
+The frontend communicates with the backend through HTTP API requests. The backend interacts with MongoDB to create, retrieve, and update application records.
+
+### Architecture Diagram
+
+```text
+                 FIXMYCAMPUS
+                      |
+          +-----------+-----------+
+          |           |           |
+       Student      Admin       Staff
+        Portal      Portal      Portal
+          |           |           |
+          +-----------+-----------+
+                      |
+                React Frontend
+                    Vercel
+                      |
+                   HTTP API
+                      |
+              Node.js + Express
+                    Render
+                      |
+                    Mongoose
+                      |
+                  MongoDB
 ```
-[ Admin Portal: Staff Management ]
-       │
-       ▼ Click "Add Staff Member"
-[ Enters Name, Official Email, Department, Employee ID ]
-       │
-       ▼ Backend validates data & checks email uniqueness
-[ Creates User with role: 'staff' and accountStatus: 'pending' ]
-       │
-       ▼ Generates 32-byte crypto random token (stores only SHA-256 hash in DB)
-[ Single-Use Activation Link generated with 7-day expiration ]
-       │
-       ▼ Copy Link / Dispatch to Technician
-[ Staff opens /activate-staff?token=... ]
-       │
-       ▼ Sets secure password (>= 6 chars)
-[ Backend marks invitation as used, updates accountStatus: 'active' ]
-       │
-       ▼
-[ Staff logs in at /staff/login ]
-```
 
-> **Security Note:** Unactivated staff members (`accountStatus: 'pending'`) and deactivated staff members (`accountStatus: 'deactivated'`) are blocked from logging in with HTTP 403. Deactivating an account immediately revokes access even for active JWT tokens.
+## 7. Local Setup
 
----
-
-## Default Credentials (Demo Accounts)
-
-| Portal | Email | Password | Role / Department |
-| :--- | :--- | :--- | :--- |
-| **Admin Portal** | `admin@campus.edu` | `Password123!` | Admin (Facilities & Operations) |
-| **Staff Portal** | `david.miller@campus.edu` | `Password123!` | Staff (Electrical Maintenance) |
-| **Staff Portal** | `sarah.jenkins@campus.edu` | `Password123!` | Staff (IT & Network Infrastructure) |
-| **Staff Portal** | `robert.chang@campus.edu` | `Password123!` | Staff (Plumbing & Sanitation) |
-| **Student Portal** | `alex.rivera@student.edu` | `Password123!` | Student (Computer Science) |
-| **Student Portal** | `emma.watson@student.edu` | `Password123!` | Student (Mechanical Engineering) |
-
----
-
-## Local Setup & Execution Commands
+Follow these instructions to run the application locally.
 
 ### Prerequisites
-- Node.js >= 18.0.0
-- npm >= 9.0.0
-- MongoDB Atlas connection string (or leave blank to use embedded zero-setup in-memory MongoDB)
 
-### 1. Install Dependencies
+Install the following tools:
+
+- Node.js and npm.
+- Git.
+- MongoDB or a MongoDB Atlas database.
+- A code editor such as Visual Studio Code.
+
+### Step 1: Clone the Repository
+
 ```bash
-# In server directory:
+git clone <YOUR_GITHUB_REPOSITORY_URL>
+cd FixMyCampus
+```
+
+Replace the placeholder with your actual GitHub repository URL.
+
+### Step 2: Install Dependencies
+
+If the frontend and backend have separate directories, install their dependencies separately.
+
+For the frontend:
+
+```bash
+cd client
+npm install
+```
+
+For the backend, open another terminal:
+
+```bash
 cd server
 npm install
-
-# In client directory:
-cd ../client
-npm install
-cd ..
 ```
 
-### 2. Configure Environment Variables
+Replace `client` and `server` with your actual directory names if your project uses a different structure.
 
-**Backend (`server/.env`):**
+### Step 3: Configure Environment Variables
+
+Create the appropriate `.env` files for the frontend and backend.
+
+Refer to the Environment Variables section below.
+
+### Step 4: Start the Backend
+
+From the backend directory, run:
+
+```bash
+npm run dev
+```
+
+If the backend does not define a `dev` script, use the start command specified in its `package.json`.
+
+### Step 5: Start the Frontend
+
+From the frontend directory, run:
+
+```bash
+npm run dev
+```
+
+Vite will display the local development URL in the terminal, commonly:
+
+```text
+http://localhost:5173
+```
+
+Open the displayed URL in your browser.
+
+*The exact commands depend on the scripts defined in the project's package.json files.*
+
+## 8. Environment Variables
+
+The application may require environment variables to configure the database, authentication, and communication between the frontend and backend.
+
+Use the following examples as a template. Confirm the actual variable names against your implementation before configuring them.
+
+### Backend Environment Variables
+
+Create a `.env` file in the backend directory:
+
 ```env
 PORT=5000
-NODE_ENV=development
-MONGODB_URI=your_mongodb_atlas_connection_string
-JWT_SECRET=supersecret_fixmycampus_jwt_token_key_change_in_production
-JWT_EXPIRES_IN=7d
-CLIENT_URL=http://localhost:5173
-
-# Optional: Cloudinary configuration for photo uploads
-CLOUDINARY_CLOUD_NAME=
-CLOUDINARY_API_KEY=
-CLOUDINARY_API_SECRET=
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_secure_random_secret
+FRONTEND_URL=http://localhost:5173
 ```
 
-**Frontend (`client/.env`):**
+If your application uses email invitations, add the email provider's required configuration variables.
+
+### Frontend Environment Variables
+
+If your frontend uses a configurable API base URL, create a `.env` file in the frontend directory:
+
 ```env
-VITE_API_URL=/api
+VITE_API_BASE_URL=http://localhost:5000/api
 ```
 
-### 3. Run Automated Test Suites
-```bash
-# 1. Run 15 Security & Role scenarios (staff invitations, privilege isolation, deactivations):
-npm run test:scenarios
+Use the actual API URL expected by your frontend code.
 
-# 2. Run 12-Step End-to-End integration audit:
-npm run audit
+### Security Guidelines
 
-# 3. Run 26 Backend Regression tests:
-npm test
-```
+- Never commit `.env` files containing real credentials.
+- Never expose database connection strings or JWT secrets in frontend code.
+- Variables prefixed with `VITE_` are exposed to client-side code and must not contain secrets.
+- Configure production environment variables through the appropriate deployment platform's dashboard.
+- Use strong, unique secrets in production.
+- Keep `.env.example` files limited to variable names and placeholder values.
 
-### 4. Start Development Servers
-```bash
-# Terminal 1: Backend API (http://localhost:5000)
-npm run dev:server
+## 9. Deployment
 
-# Terminal 2: Frontend SPA (http://localhost:5173)
-npm run dev:client
-```
+FixMyCampus uses separate deployment platforms for its frontend and backend.
 
-Open [http://localhost:5173](http://localhost:5173) in your browser.
+### Frontend Deployment — Vercel
+
+The React frontend is deployed on Vercel.
+
+Deployment process:
+
+1. Push the frontend source code to GitHub.
+2. Import the repository into Vercel.
+3. Configure the correct frontend root directory and build settings.
+4. Add the production API base URL as an environment variable if required.
+5. Deploy the application.
+6. Test the deployed frontend in a browser.
+
+**Frontend URL:** [Insert your live Vercel URL]
+
+### Backend Deployment — Render
+
+The Node.js and Express.js backend is deployed on Render.
+
+Deployment process:
+
+1. Connect the GitHub repository to Render.
+2. Configure the backend root directory and build/start commands.
+3. Add the required environment variables.
+4. Configure the production MongoDB connection.
+5. Configure CORS to allow requests from the deployed frontend.
+6. Deploy the backend and verify that its API endpoints work.
+
+**Backend URL:** [Insert your live Render URL]
+
+### Database Configuration
+
+The backend must connect to the configured MongoDB database using a server-side connection string.
+
+Ensure that:
+- The database connection string is valid.
+- Database access permissions are configured appropriately.
+- The database is reachable from the deployed backend.
+- Production data persists across application restarts.
+- Credentials are stored securely.
+
+### Production Verification
+
+After deployment, verify that:
+
+- The frontend loads successfully.
+- The backend responds to API requests.
+- User authentication works.
+- Students can submit and retrieve issues.
+- Administrators can manage issues and staff.
+- Staff members can access assigned issues.
+- Database operations persist correctly.
+- Unauthorized requests are rejected.
+
+## 10. Demo Video
+
+**Demo Video Link:** [https://drive.google.com/file/d/1ScQoyGk1XxhHLV3QojSu9WHWkAlotaQS/view?usp=drive_link]
+
+A short demonstration video will showcase the working application and its primary workflows.
+
+The planned demonstration includes:
+
+1. Introduction to the campus maintenance problem.
+2. Overview of the Student, Admin, and Staff portals.
+3. Student registration, login, and issue reporting.
+4. Admin staff registration and issue assignment.
+5. Staff access and issue status updates.
+6. Tracking issue progress through the application.
+7. Overview of the deployed application.
+
+The demonstration will focus on actual application functionality rather than reading source code.
+
+## 11. Future Improvements
+
+Potential future enhancements include:
+
+- Email notifications when issue statuses change.
+- Image uploads for visual evidence of maintenance problems.
+- Automatic issue categorization and duplicate detection.
+- Advanced analytics and staff performance reports.
+- Real-time notifications for issue assignments.
+- Improved mobile accessibility.
+- Integration with institutional systems.
+
+These are potential future enhancements and are not necessarily part of the current implementation.
+
+## 12. Conclusion
+
+FixMyCampus provides a centralized approach to campus maintenance management by connecting students, administrators, and staff through a structured issue reporting and tracking system.
+
+By digitizing complaint submission, staff assignment, and progress monitoring, the application aims to improve accountability and make maintenance workflows easier to manage.
+
+The project demonstrates the application of full-stack web development, database integration, authentication, role-based access control, API development, and cloud deployment in solving a practical campus problem.
 
 ---
 
-## API Reference
+**Project Name:** FixMyCampus
 
-### Authentication
-- `POST /api/auth/register` — Public student registration only.
-- `POST /api/auth/login` — Authenticate user (blocks pending and deactivated accounts).
-- `POST /api/auth/activate-staff` — Validates invitation token, sets password, activates staff account.
-- `GET /api/auth/me` — Current authenticated user identity.
-- `POST /api/auth/logout` — Invalidate user session.
+**Frontend:** React.js and Vite
 
-### Admin Staff Management (Admin Only)
-- `GET /api/admin/staff` — List staff members with assigned issue count and invitation status.
-- `POST /api/admin/staff` — Create staff account and issue single-use invitation.
-- `PATCH /api/admin/staff/:id/status` — Deactivate or reactivate a staff member.
-- `POST /api/admin/staff/:id/resend-invitation` — Revoke previous invitation and issue new token safely.
+**Backend:** Node.js and Express.js
 
-### Issues & Workflows
-- `GET /api/issues` — List issues (supports search, category, status, priority, building, pagination).
-- `POST /api/issues` — Create issue with optional photo upload.
-- `POST /api/issues/check-duplicates` — Check for potential duplicate tickets in same location.
-- `GET /api/issues/:id` — View issue details, populated technician, and status history.
-- `PATCH /api/issues/:id/status` — Update issue status (assigned staff / admin / student close).
-- `PATCH /api/issues/:id/assign` — Assign issue to active staff member (Admin only).
-- `PATCH /api/issues/:id/priority` — Adjust priority (Admin only).
-- `GET /api/issues/:issueId/comments` — View issue discussion and technician notes.
-- `POST /api/issues/:issueId/comments` — Add comment (supports internal staff notes).
+**Database:** MongoDB
 
-### Analytics
-- `GET /api/analytics` — Real-time live MongoDB aggregations for dashboard metrics (Admin only).
+**Frontend Hosting:** Vercel
 
----
+**Backend Hosting:** Render
 
-## 🚀 Deploying to Vercel
+**Repository:** []
 
-FixMyCampus is configured for zero-friction Vercel deployment. You can deploy it in one of two architectures:
+**Live Application:** [https://fix-my-campus-4f33.vercel.app/]
 
-### Option A: All-in-One Single Vercel Project (Recommended)
-Both the Vite React frontend and the Express Serverless API are hosted inside a single Vercel project under the same domain. This eliminates cross-origin CORS issues and avoids running two separate services.
-
-#### 1. Configure MongoDB Atlas
-1. Log in to [MongoDB Atlas](https://cloud.mongodb.com/).
-2. Under **Security** → **Database Access**, create a database user with **Read and write to any database** permissions.
-3. Under **Security** → **Network Access**, click **Add IP Address** and choose **Allow Access From Anywhere** (`0.0.0.0/0`).
-   > *Note: Vercel serverless functions use dynamic IP addresses across AWS regions, requiring `0.0.0.0/0` access.*
-4. Under **Deployment** → **Database**, click **Connect** → **Drivers** → Copy your connection string:
-   ```
-   mongodb+srv://<username>:<password>@cluster0.mongodb.net/fixmycampus?retryWrites=true&w=majority
-   ```
-
-#### 2. Push Repository to GitHub
-Ensure all changes are committed and pushed to your GitHub repository:
-```bash
-git add .
-git commit -m "feat: configure FixMyCampus for Vercel deployment"
-git push origin master
-```
-
-#### 3. Import Project into Vercel
-1. Log in to your [Vercel Dashboard](https://vercel.com/dashboard).
-2. Click **Add New...** → **Project**.
-3. Import your FixMyCampus GitHub repository.
-4. Leave **Root Directory** as `./` (Project Root).
-5. The build settings in `vercel.json` are preconfigured:
-   - **Build Command:** `npm --prefix client run build`
-   - **Output Directory:** `client/dist`
-   - **Framework Preset:** `Vite` (or `Other`)
-6. Open **Environment Variables** and add the following keys:
-   | Variable Name | Example Value | Description |
-   | :--- | :--- | :--- |
-   | `MONGODB_URI` | `mongodb+srv://user:pass@cluster.mongodb.net/fixmycampus?retryWrites=true&w=majority` | Your live MongoDB Atlas connection string. |
-   | `JWT_SECRET` | `supersecret_production_key_random_32_chars_min` | Strong secret for signing authentication JWT tokens. |
-   | `JWT_EXPIRES_IN` | `7d` | Token expiration period. |
-   | `NODE_ENV` | `production` | Production environment flag. |
-   | `FRONTEND_URL` | `https://your-project.vercel.app` | Your Vercel domain (used for CORS and staff invitation URLs). |
-   | `CLIENT_URL` | `https://your-project.vercel.app` | Same as `FRONTEND_URL`. |
-   | `VITE_API_BASE_URL` | `/api` | Kept as `/api` for same-domain serverless routing. |
-7. Click **Deploy**.
-8. Once the build finishes, your site is live with:
-   - Frontend SPA at `https://your-project.vercel.app`
-   - Serverless Express API at `https://your-project.vercel.app/api/*`
-
----
-
-### Option B: Split Vercel Projects (Separate Frontend & Backend)
-
-If you prefer two separate Vercel projects (e.g., `fixmycampus-web` and `fixmycampus-api`):
-
-#### Project 1: Backend API (`fixmycampus-api`)
-1. Import the repository into Vercel.
-2. In Project Settings:
-   - **Root Directory:** `./`
-   - **Environment Variables:**
-     - `MONGODB_URI`: Your MongoDB Atlas URI.
-     - `JWT_SECRET`: Production JWT secret.
-     - `FRONTEND_URL`: `https://fixmycampus-web.vercel.app`
-     - `CLIENT_URL`: `https://fixmycampus-web.vercel.app`
-     - `NODE_ENV`: `production`
-
-#### Project 2: Frontend SPA (`fixmycampus-web`)
-1. Import the same repository into Vercel as a new project.
-2. In Project Settings:
-   - **Root Directory:** `client`
-   - **Framework Preset:** `Vite`
-   - **Build Command:** `npm run build`
-   - **Output Directory:** `dist`
-   - `client/vercel.json` is already included to guarantee that refreshing nested routes (e.g. `/student/login`, `/admin/staff`) rewrites to `index.html`.
-3. In **Environment Variables**:
-   - `VITE_API_BASE_URL`: `https://fixmycampus-api.vercel.app/api`
-4. Click **Deploy**.
-
----
-
-## 🔐 Staff Invitation & Activation Lifecycle on Vercel
-
-1. **Admin Issues Invitation**: In the Admin Portal (`/admin/staff`), clicking **Add Staff Member** creates a pending staff record and generates a single-use 256-bit token. Only its SHA-256 hash is saved to MongoDB.
-2. **Activation URL Delivery**:
-   - If SMTP is configured (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`), the system can dispatch an activation email.
-   - If SMTP is omitted, the activation link (`https://your-project.vercel.app/activate-staff?token=...`) is securely displayed inside the Admin interface modal and table with a 1-click **Copy Link** button.
-3. **Staff Sets Password**: The staff member visits the activation link, establishes their password, and activates their account.
-4. **Login**: Staff members log in through the dedicated Staff Portal at `/staff/login`.
-5. **Immediate Access Control**: Deactivating a staff member in `/admin/staff` immediately blocks active JWT tokens via backend middleware checks (`accountStatus: 'deactivated'`).
+**Demo Video:** [https://drive.google.com/file/d/1ScQoyGk1XxhHLV3QojSu9WHWkAlotaQS/view?usp=drive_link]
