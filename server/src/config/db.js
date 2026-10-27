@@ -8,13 +8,17 @@ export const connectDB = async () => {
   }
 
   try {
-    let mongoUri = process.env.MONGODB_URI ? process.env.MONGODB_URI.trim().replace(/^["']|["']$/g, '') : '';
+    let mongoUri = (process.env.MONGODB_URI || process.env.dbURL || process.env.MONGO_URI || '').trim().replace(/^["']|["']$/g, '');
 
     if (mongoUri) {
       // Ensure database name and options are appended if URI ends with cluster root
       if (mongoUri.endsWith('.mongodb.net/') || mongoUri.endsWith('.mongodb.net')) {
         const separator = mongoUri.endsWith('/') ? '' : '/';
         mongoUri = `${mongoUri}${separator}fixmycampus?retryWrites=true&w=majority`;
+      }
+      // Ensure authSource=admin is included for MongoDB Atlas connections
+      if (mongoUri.includes('mongodb+srv://') && !mongoUri.includes('authSource=')) {
+        mongoUri += (mongoUri.includes('?') ? '&' : '?') + 'authSource=admin';
       }
     } else {
       console.log('ℹ️  No MONGODB_URI found. Initializing embedded in-memory MongoDB for local execution...');
